@@ -3,6 +3,14 @@ const cors = require('cors');
 const ytdl = require('ytdl-core');
 const fs = require('fs');
 const path = require('path');
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./chakra-reservation-firebase-adminsdk-tfdw6-f394377db4.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 
 const server = express();
 const port = 3000;
@@ -22,27 +30,40 @@ server.use(express.json());
 
 server.post('/download', async (req, res) => {
     try {
-        const videoUrl = req.body.url;
-        const info = await ytdl.getInfo(videoUrl);
-        const format = ytdl.chooseFormat(info.formats, { filter: 'audioandvideo' });
-
-        if (!format) {
-            return res.status(400).send('Error: No audio format found');
-        }
-
-        const filePath = path.join(storagePath, 'audio.mp3');
-
-        ytdl(videoUrl, { format: format })
-            .pipe(fs.createWriteStream(filePath))
-            .on('finish', () => {
-                res.setHeader('Content-Disposition', 'attachment; filename="audio.mp3"');
-                res.sendFile(filePath);
-            });
+      const idToken = req.headers.authorization?.split('Bearer ')[1];
+      if (!idToken) {
+        return res.status(401).send('Unauthorized');
+      }
+  
+      // Verify the ID token using Firebase Admin SDK
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      // User is authenticated, proceed with the download
+      
+      const videoUrl = req.body.url;
+      const info = await ytdl.getInfo(videoUrl);
+      const format = ytdl.chooseFormat(info.formats, { filter: 'audioandvideo' });
+  
+      if (!format) {
+        return res.status(400).send('Error: No audio format found');
+      }
+  
+      const filePath = path.join(storagePath, 'audio.mp3');
+  
+      ytdl(videoUrl, { format: format })
+        .pipe(fs.createWriteStream(filePath))
+        .on('finish', () => {
+          res.setHeader('Content-Disposition', 'attachment; filename="audio.mp3"');
+          res.sendFile(filePath);
+        });
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).send('Internal Server Error');
+      if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+        return res.status(401).send('Invalid token');
+      }
+      console.error('Error:', error);
+      res.status(500).send('Internal Server Error');
     }
-});
+  });
+  
 
 server.get('/download-file', (req, res) => {
     const filePath = path.join(storagePath, 'audio.mp3');

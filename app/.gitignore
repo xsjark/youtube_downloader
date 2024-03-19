@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.env
+./server/chakra-reservation-firebase-adminsdk-tfdw6-f394377db4.json
