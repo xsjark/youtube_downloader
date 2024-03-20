@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const ytdl = require('ytdl-core');
@@ -5,7 +6,19 @@ const fs = require('fs');
 const path = require('path');
 var admin = require("firebase-admin");
 
-var serviceAccount = require("./chakra-reservation-firebase-adminsdk-tfdw6-f394377db4.json");
+const serviceAccount = {
+    "type": "service_account",
+    "project_id": "chakra-reservation",
+    "private_key_id":"f394377db44fdc06c3a47b779c6923777bc7a6e3",
+    "private_key":process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
+    "universe_domain":"googleapis.com",
+    "client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-tfdw6%40chakra-reservation.iam.gserviceaccount.com",
+    "client_email":"firebase-adminsdk-tfdw6@chakra-reservation.iam.gserviceaccount.com",
+    "client_id":"101195416801658280025",
+    "auth_uri":"https://accounts.google.com/o/oauth2/auth",
+    "token_uri":"https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
+  };
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
